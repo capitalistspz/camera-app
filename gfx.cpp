@@ -10,8 +10,6 @@
 #include <gx2/registers.h>
 #include <gx2/texture.h>
 #include <gx2/utils.h>
-#include <gx2r/buffer.h>
-#include <gx2r/draw.h>
 #include <whb/gfx.h>
 #include <whb/log.h>
 
@@ -66,8 +64,6 @@ void main()
 WHBGfxShaderGroup s_shaderGroup{};
 GX2Texture s_yTex{};
 GX2Texture s_uvTex{};
-GX2RBuffer s_vtxPosBuffer{};
-GX2RBuffer s_texCoordBuffer{};
 GX2Sampler s_sampler{};
 
 void InitTex(GX2Texture& tex, uint32_t width, uint32_t height, GX2SurfaceFormat surfaceFormat, uint32_t compMap)
@@ -136,28 +132,6 @@ bool Init()
     WHBGfxInitShaderAttribute(&s_shaderGroup, "inTexCoord", 1, 0, GX2_ATTRIB_FORMAT_FLOAT_32_32);
 
     WHBGfxInitFetchShader(&s_shaderGroup);
-
-    s_vtxPosBuffer.flags = GX2R_RESOURCE_BIND_VERTEX_BUFFER | GX2R_RESOURCE_USAGE_CPU_READ |
-                           GX2R_RESOURCE_USAGE_CPU_WRITE | GX2R_RESOURCE_USAGE_GPU_READ;
-    s_texCoordBuffer.flags = GX2R_RESOURCE_BIND_VERTEX_BUFFER | GX2R_RESOURCE_USAGE_CPU_READ |
-                             GX2R_RESOURCE_USAGE_CPU_WRITE | GX2R_RESOURCE_USAGE_GPU_READ;
-
-    s_vtxPosBuffer.elemSize = sizeof(float) * 2;
-    s_vtxPosBuffer.elemCount = 4;
-
-    s_texCoordBuffer.elemSize = sizeof(float) * 2;
-    s_texCoordBuffer.elemCount = 4;
-
-    GX2RCreateBuffer(&s_vtxPosBuffer);
-    GX2RCreateBuffer(&s_texCoordBuffer);
-
-    auto* posUploadBuf = GX2RLockBufferEx(&s_vtxPosBuffer, GX2R_RESOURCE_BIND_NONE);
-    std::memcpy(posUploadBuf, s_posCoords, s_vtxPosBuffer.elemSize * s_vtxPosBuffer.elemCount);
-    GX2RUnlockBufferEx(&s_vtxPosBuffer, GX2R_RESOURCE_BIND_NONE);
-
-    auto* texCoordUploadBuf = GX2RLockBufferEx(&s_vtxPosBuffer, GX2R_RESOURCE_BIND_NONE);
-    std::memcpy(texCoordUploadBuf, s_texCoords, s_texCoordBuffer.elemSize * s_texCoordBuffer.elemCount);
-    GX2RUnlockBufferEx(&s_texCoordBuffer, GX2R_RESOURCE_BIND_NONE);
 
     return true;
 }
