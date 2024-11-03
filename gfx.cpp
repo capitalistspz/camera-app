@@ -89,7 +89,7 @@ void InitTex(GX2Texture& tex, uint32_t width, uint32_t height, GX2SurfaceFormat 
 
     GX2CalcSurfaceSizeAndAlignment(&tex.surface);
     GX2InitTextureRegs(&tex);
-    tex.surface.image = std::aligned_alloc(tex.surface.alignment, tex.surface.imageSize);
+
     WHBLogPrintf("Image: Size: %d, Alignment: %d, Pitch: %d", tex.surface.imageSize, tex.surface.alignment,
                  tex.surface.pitch);
 }
