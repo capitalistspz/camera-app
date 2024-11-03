@@ -7,30 +7,20 @@
 #include <glm/glm.hpp>
 #include <gx2/draw.h>
 #include <gx2/mem.h>
+#include <gx2/registers.h>
 #include <gx2/texture.h>
 #include <gx2/utils.h>
 #include <gx2r/buffer.h>
 #include <gx2r/draw.h>
 #include <whb/gfx.h>
 #include <whb/log.h>
-#include <gx2/registers.h>
 
 namespace gfx
 {
 
-constexpr float s_texCoords[8]{
-    0.0f, 1.0,
-    1.0f, 1.0f,
-    1.0f, 0.0f,
-    0.0f, 0.0f};
+constexpr float s_texCoords[8]{0.0f, 1.0, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
 
-constexpr float s_posCoords[8] {
-    -0.75f, -1.0f,
-    +0.75f, -1.0f,
-    +0.75f, +1.0f,
-    -0.75f, +1.0f
-};
-
+constexpr float s_posCoords[8]{-0.75f, -1.0f, +0.75f, -1.0f, +0.75f, +1.0f, -0.75f, +1.0f};
 
 constexpr const char* vertShaderSrc = R"(
 #version 450
@@ -106,8 +96,10 @@ void InitTex(GX2Texture& tex, uint32_t width, uint32_t height, GX2SurfaceFormat 
 
 bool Init()
 {
-    InitTex(s_yTex, CAMERA_WIDTH, CAMERA_HEIGHT, GX2_SURFACE_FORMAT_UNORM_R8, GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_0, GX2_SQ_SEL_0, GX2_SQ_SEL_1));
-    InitTex(s_uvTex, CAMERA_WIDTH / 2, CAMERA_HEIGHT / 2, GX2_SURFACE_FORMAT_UNORM_R8_G8, GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_G, GX2_SQ_SEL_0, GX2_SQ_SEL_1));
+    InitTex(s_yTex, CAMERA_WIDTH, CAMERA_HEIGHT, GX2_SURFACE_FORMAT_UNORM_R8,
+            GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_0, GX2_SQ_SEL_0, GX2_SQ_SEL_1));
+    InitTex(s_uvTex, CAMERA_WIDTH / 2, CAMERA_HEIGHT / 2, GX2_SURFACE_FORMAT_UNORM_R8_G8,
+            GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_G, GX2_SQ_SEL_0, GX2_SQ_SEL_1));
 
     GX2InitSampler(&s_sampler, GX2_TEX_CLAMP_MODE_CLAMP, GX2_TEX_XY_FILTER_MODE_LINEAR);
     GX2InitSamplerBorderType(&s_sampler, GX2_TEX_BORDER_TYPE_BLACK);
@@ -121,8 +113,8 @@ bool Init()
         WHBLogPrintf("Failed to compile vertex shader: %s", infoLog);
         return false;
     }
-    WHBLogPrintf("Vertex Shader: %d Attrib, %d Samplers, %d Uniforms",
-        s_shaderGroup.vertexShader->attribVarCount, s_shaderGroup.vertexShader->samplerVarCount,s_shaderGroup.vertexShader->uniformVarCount);
+    WHBLogPrintf("Vertex Shader: %d Attrib, %d Samplers, %d Uniforms", s_shaderGroup.vertexShader->attribVarCount,
+                 s_shaderGroup.vertexShader->samplerVarCount, s_shaderGroup.vertexShader->uniformVarCount);
 
     s_shaderGroup.pixelShader = GLSL_CompilePixelShader(fragShaderSrc, infoLog, infoLogSize, GLSL_COMPILER_FLAG_NONE);
     if (!s_shaderGroup.pixelShader)
@@ -131,23 +123,24 @@ bool Init()
         GLSL_FreeVertexShader(s_shaderGroup.vertexShader);
         return false;
     }
-    WHBLogPrintf("Pixel Shader: %d Samplers, %d Uniforms",
-        s_shaderGroup.pixelShader->samplerVarCount,s_shaderGroup.pixelShader->uniformVarCount);
+    WHBLogPrintf("Pixel Shader: %d Samplers, %d Uniforms", s_shaderGroup.pixelShader->samplerVarCount,
+                 s_shaderGroup.pixelShader->uniformVarCount);
 
     GX2Invalidate(GX2_INVALIDATE_MODE_CPU_SHADER, s_shaderGroup.vertexShader->program,
                   s_shaderGroup.vertexShader->size);
     GX2Invalidate(GX2_INVALIDATE_MODE_CPU_SHADER, s_shaderGroup.pixelShader->program, s_shaderGroup.pixelShader->size);
 
-
-// Shader attributes
+    // Shader attributes
 
     WHBGfxInitShaderAttribute(&s_shaderGroup, "inPosCoord", 0, 0, GX2_ATTRIB_FORMAT_FLOAT_32_32);
     WHBGfxInitShaderAttribute(&s_shaderGroup, "inTexCoord", 1, 0, GX2_ATTRIB_FORMAT_FLOAT_32_32);
 
     WHBGfxInitFetchShader(&s_shaderGroup);
 
-    s_vtxPosBuffer.flags = GX2R_RESOURCE_BIND_VERTEX_BUFFER | GX2R_RESOURCE_USAGE_CPU_READ | GX2R_RESOURCE_USAGE_CPU_WRITE | GX2R_RESOURCE_USAGE_GPU_READ;
-    s_texCoordBuffer.flags = GX2R_RESOURCE_BIND_VERTEX_BUFFER | GX2R_RESOURCE_USAGE_CPU_READ | GX2R_RESOURCE_USAGE_CPU_WRITE | GX2R_RESOURCE_USAGE_GPU_READ;
+    s_vtxPosBuffer.flags = GX2R_RESOURCE_BIND_VERTEX_BUFFER | GX2R_RESOURCE_USAGE_CPU_READ |
+                           GX2R_RESOURCE_USAGE_CPU_WRITE | GX2R_RESOURCE_USAGE_GPU_READ;
+    s_texCoordBuffer.flags = GX2R_RESOURCE_BIND_VERTEX_BUFFER | GX2R_RESOURCE_USAGE_CPU_READ |
+                             GX2R_RESOURCE_USAGE_CPU_WRITE | GX2R_RESOURCE_USAGE_GPU_READ;
 
     s_vtxPosBuffer.elemSize = sizeof(float) * 2;
     s_vtxPosBuffer.elemCount = 4;
@@ -173,7 +166,7 @@ void SetImage(void* img)
 {
     if (img == s_yTex.surface.image)
         return;
-    GX2Invalidate(GX2_INVALIDATE_MODE_CPU_TEXTURE,img, CAMERA_YUV_BUFFER_SIZE);
+    GX2Invalidate(GX2_INVALIDATE_MODE_CPU_TEXTURE, img, CAMERA_YUV_BUFFER_SIZE);
     s_yTex.surface.image = img;
     s_uvTex.surface.image = static_cast<uint8_t*>(img) + CAMERA_Y_BUFFER_SIZE;
 }

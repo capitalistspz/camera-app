@@ -35,10 +35,9 @@ void EventHandler(CAMEventData* evtData)
     }
 }
 
-
 bool Init()
 {
-    CAMStreamInfo streamInfo {.type = CAMERA_STREAM_TYPE_1, .height = CAMERA_HEIGHT, .width = CAMERA_WIDTH};
+    CAMStreamInfo streamInfo{.type = CAMERA_STREAM_TYPE_1, .height = CAMERA_HEIGHT, .width = CAMERA_WIDTH};
     const auto memReq = CAMGetMemReq(&streamInfo);
     if (memReq <= 0)
     {
@@ -47,9 +46,13 @@ bool Init()
     }
     s_workMemBuf = Alloc(0x100, memReq);
 
-    CAMWorkMem workMem {.size = static_cast<uint32_t>(memReq), .pMem = s_workMemBuf};
-    CAMMode mode {.forceDrc = false, .fps = CAMERA_FPS_30};
-    CAMSetupInfo setupInfo {.streamInfo =  streamInfo, .workMem =  workMem, .eventHandler =  EventHandler, .mode = mode, .threadAffinity =  OS_THREAD_ATTRIB_AFFINITY_CPU1};
+    CAMWorkMem workMem{.size = static_cast<uint32_t>(memReq), .pMem = s_workMemBuf};
+    CAMMode mode{.forceDrc = false, .fps = CAMERA_FPS_30};
+    CAMSetupInfo setupInfo{.streamInfo = streamInfo,
+                           .workMem = workMem,
+                           .eventHandler = EventHandler,
+                           .mode = mode,
+                           .threadAffinity = OS_THREAD_ATTRIB_AFFINITY_CPU1};
     CAMError camError;
     s_handle = CAMInit(0, &setupInfo, &camError);
     if (s_handle < 0)

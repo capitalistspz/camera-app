@@ -55,21 +55,19 @@ int main()
     WHBLogPrint("Initialized graphics");
 
     VPADStatus vpadStatus;
-    VPADStatus prevVpadStatus {};
+    VPADStatus prevVpadStatus{};
     VPADReadError vpadReadError;
 
     while (WHBProcIsRunning())
     {
-
         auto buf = camera::GetSurfaceBuffer();
-        auto count = VPADRead(VPAD_CHAN_0, &vpadStatus, 1, &vpadReadError);
-        if (count > 0)
+        if (const auto count = VPADRead(VPAD_CHAN_0, &vpadStatus, 1, &vpadReadError); count > 0)
         {
             const auto justChanged = vpadStatus.hold & ~prevVpadStatus.hold;
             if (justChanged & VPAD_BUTTON_A)
             {
                 WHBLogPrint("Starting image capture");
-                auto * const file = std::fopen("/vol/external01/wiiu/cam/img4.nv12", "wb");
+                auto* const file = std::fopen("/vol/external01/wiiu/cam/img4.nv12", "wb");
                 if (!file)
                 {
                     WHBLogPrintf("Failed to open file: %s", std::strerror(errno));
@@ -77,7 +75,7 @@ int main()
                 }
                 const auto bytesWritten = std::fwrite(buf, 1, CAMERA_YUV_BUFFER_SIZE, file);
                 WHBLogPrintf("Write %d bytes", bytesWritten);
-                if (const auto err = std::fclose(file))
+                if (std::fclose(file) != 0)
                 {
                     WHBLogPrintf("Failed to close file: %s", std::strerror(errno));
                     continue;
