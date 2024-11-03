@@ -1,10 +1,7 @@
-//
-// Created by pz on 02/11/24.
-//
-
 #include "camera.hpp"
 #include <cstdlib>
 #include <whb/log.h>
+#include <camera/camera.h>
 
 namespace camera
 {

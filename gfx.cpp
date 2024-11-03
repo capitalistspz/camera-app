@@ -2,12 +2,9 @@
 
 #include <CafeGLSLCompiler.h>
 #include <camera/camera.h>
-#include <cstdlib>
 #include <cstring>
-#include <glm/glm.hpp>
 #include <gx2/draw.h>
 #include <gx2/mem.h>
-#include <gx2/registers.h>
 #include <gx2/texture.h>
 #include <gx2/utils.h>
 #include <whb/gfx.h>

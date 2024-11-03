@@ -1,6 +1,7 @@
 #include "camera.hpp"
 #include "gfx.hpp"
 #include <CafeGLSLCompiler.h>
+#include <camera/camera.h>
 #include <cerrno>
 #include <chrono>
 #include <cstdio>
