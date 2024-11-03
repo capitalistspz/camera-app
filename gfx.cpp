@@ -18,7 +18,8 @@ namespace gfx
 
 constexpr float s_texCoords[8]{0.0f, 1.0, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
 
-constexpr float s_posCoords[8]{-0.75f, -1.0f, +0.75f, -1.0f, +0.75f, +1.0f, -0.75f, +1.0f};
+constexpr float xScale = 640.0f / 854.0f;
+constexpr float s_posCoords[8]{-xScale, -1.0f, +xScale, -1.0f, +xScale, +1.0f, -xScale, +1.0f};
 
 constexpr const char* vertShaderSrc = R"(
 #version 450
