@@ -152,7 +152,6 @@ void DrawInternal()
     GX2SetFetchShader(&s_shaderGroup.fetchShader);
     GX2SetVertexShader(s_shaderGroup.vertexShader);
     GX2SetPixelShader(s_shaderGroup.pixelShader);
-    GX2SetDepthOnlyControl(TRUE, TRUE, GX2_COMPARE_FUNC_LESS);
 
     GX2SetPixelTexture(&s_yTex, s_shaderGroup.pixelShader->samplerVars[0].location);
     GX2SetPixelTexture(&s_uvTex, s_shaderGroup.pixelShader->samplerVars[1].location);
