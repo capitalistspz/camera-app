@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <whb/log.h>
 #include <camera/camera.h>
+#include <cerrno>
+#include <cstring>
 
 namespace camera
 {
@@ -19,7 +21,7 @@ void* Alloc(uint32_t alignment, uint32_t size)
 
 CAMHandle s_handle = -1;
 CAMSurface s_surfaces[2];
-unsigned s_surfaceIndex = 0;
+unsigned s_decodeSurfaceIndex = 0;
 bool s_submitNewSurface = true;
 void* s_workMemBuf = nullptr;
 
@@ -28,7 +30,7 @@ void EventHandler(CAMEventData* evtData)
     if (evtData->eventType == CAMERA_DECODE_DONE)
     {
         s_submitNewSurface = true;
-        s_surfaceIndex = !s_surfaceIndex;
+        s_decodeSurfaceIndex = !s_decodeSurfaceIndex;
     }
 }
 
@@ -76,16 +78,40 @@ void* GetSurfaceBuffer()
 {
     if (s_submitNewSurface)
     {
-        if (CAMSubmitTargetSurface(s_handle, &s_surfaces[s_surfaceIndex]) == CAMERA_ERROR_OK)
+        if (CAMSubmitTargetSurface(s_handle, &s_surfaces[s_decodeSurfaceIndex]) == CAMERA_ERROR_OK)
         {
             s_submitNewSurface = false;
         }
     }
-    return s_surfaces[!s_surfaceIndex].surfaceBuffer;
+    return s_surfaces[!s_decodeSurfaceIndex].surfaceBuffer;
 }
 void Exit()
 {
     CAMExit(s_handle);
     std::free(s_workMemBuf);
 }
+
+void SaveNV12(const std::filesystem::path& path)
+{
+    WHBLogPrintf("Saving a photo to %s", path.c_str());
+
+    auto* const file = std::fopen(path.c_str(), "wb");
+    if (!file)
+    {
+        WHBLogPrintf("Failed to open file: %s", std::strerror(errno));
+        return;
+    }
+
+    auto* const buf = static_cast<const uint8_t*>(s_surfaces[!s_decodeSurfaceIndex].surfaceBuffer);
+    for (auto line = 0u; line < (CAMERA_HEIGHT + (CAMERA_HEIGHT >> 1)); ++line)
+    {
+        std::fwrite(buf + CAMERA_PITCH * line, 1, CAMERA_WIDTH, file);
+    }
+
+    if (std::fclose(file) != 0)
+        WHBLogPrintf("Failed to close file: %s", std::strerror(errno));
+    else
+        WHBLogPrint("Successfully saved photo");
+}
+
 } // namespace camera
