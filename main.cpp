@@ -11,7 +11,7 @@
 #include <whb/proc.h>
 
 void DeInit();
-void Exit();
+[[noreturn]] void ExitToMenu();
 
 int main()
 {
@@ -26,8 +26,7 @@ int main()
     if (!camera::Init())
     {
         WHBLogPrint("Failed to initialize/open camera");
-        Exit();
-        return 0;
+        ExitToMenu();
     }
 
     WHBLogPrint("Initialized and opened camera");
@@ -36,8 +35,7 @@ int main()
     {
         WHBLogPrint("Failed to initialize graphics");
         camera::Exit();
-        Exit();
-        return 0;
+        ExitToMenu();
     }
     WHBLogPrint("Initialized graphics");
 
@@ -79,11 +77,12 @@ void DeInit()
     WHBProcShutdown();
 }
 
-void Exit()
+[[noreturn]] void ExitToMenu()
 {
     SYSLaunchMenu();
     while (WHBProcIsRunning())
     {
     }
     DeInit();
+    std::exit(0);
 }
