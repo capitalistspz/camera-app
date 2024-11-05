@@ -180,7 +180,7 @@ void Draw()
 
 void Cleanup()
 {
-    WHBGfxFreePixelShader(s_shaderGroup.pixelShader);
-    WHBGfxFreeVertexShader(s_shaderGroup.vertexShader);
+    GLSL_FreePixelShader(s_shaderGroup.pixelShader);
+    GLSL_FreeVertexShader(s_shaderGroup.vertexShader);
 }
 }; // namespace gfx

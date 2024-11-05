@@ -66,6 +66,7 @@ int main()
     }
 
     camera::Exit();
+    gfx::Cleanup();
     DeInit();
     return 0;
 }
