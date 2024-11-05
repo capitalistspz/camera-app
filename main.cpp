@@ -35,6 +35,7 @@ int main()
     if (!gfx::Init())
     {
         WHBLogPrint("Failed to initialize graphics");
+        camera::Exit();
         Exit();
         return 0;
     }

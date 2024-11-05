@@ -89,6 +89,8 @@ void Exit()
 {
     CAMExit(s_handle);
     std::free(s_workMemBuf);
+    std::free(s_surfaces[0].surfaceBuffer);
+    std::free(s_surfaces[1].surfaceBuffer);
 }
 
 void SaveNV12(const std::filesystem::path& path)
