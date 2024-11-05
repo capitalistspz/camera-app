@@ -1,4 +1,4 @@
-#include "gfx.hpp"
+#include "graphics.hpp"
 
 #include <CafeGLSLCompiler.h>
 #include <camera/camera.h>
@@ -10,30 +10,38 @@
 #include <whb/gfx.h>
 #include <whb/log.h>
 
-namespace gfx
+namespace graphics
 {
 
-constexpr float s_texCoords[8]{0.0f, 1.0, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+struct Vec2f
+{
+    float x;
+    float y;
+};
+static_assert(sizeof(Vec2f) == 8);
 
-constexpr float xScale = 640.0f / 854.0f;
-constexpr float s_posCoords[8]{-xScale, -1.0f, +xScale, -1.0f, +xScale, +1.0f, -xScale, +1.0f};
+constexpr Vec2f TEX_COORDS[4]{{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}};
 
-constexpr const char* vertShaderSrc = R"(
+constexpr float VERTEX_X_SCALE = 640.0f / 854.0f;
+constexpr Vec2f VERTEX_COORDS[8]{
+    {-VERTEX_X_SCALE, -1.0f}, {+VERTEX_X_SCALE, -1.0f}, {+VERTEX_X_SCALE, +1.0f}, {-VERTEX_X_SCALE, +1.0f}};
+
+constexpr char VERTEX_SHADER_SRC[] = R"(
 #version 450
 
-layout (location = 0) in vec2 inPosCoord;
+layout (location = 0) in vec2 inVertexCoord;
 layout (location = 1) in vec2 inTexCoord;
 
 layout (location = 0) out vec2 texCoord;
 
 void main()
 {
-    gl_Position = vec4(inPosCoord.x, inPosCoord.y, 0.0, 1.0);
+    gl_Position = vec4(inVertexCoord.x, inVertexCoord.y, 0.0, 1.0);
     texCoord = inTexCoord;
 }
 )";
 
-constexpr const char* fragShaderSrc = R"(
+constexpr char PIXEL_SHADER_SRC[] = R"(
 #version 450
 
 layout (location = 0) in vec2 texCoord;
@@ -60,11 +68,12 @@ void main()
 })";
 
 WHBGfxShaderGroup s_shaderGroup{};
-GX2Texture s_yTex{};
-GX2Texture s_uvTex{};
+GX2Texture s_yTexture{};
+GX2Texture s_uvTexture{};
 GX2Sampler s_sampler{};
 
-void InitTex(GX2Texture& tex, uint32_t width, uint32_t height, GX2SurfaceFormat surfaceFormat, uint32_t compMap)
+void InitializeTexture(GX2Texture& tex, uint32_t width, uint32_t height, GX2SurfaceFormat surfaceFormat,
+                       uint32_t compMap)
 {
     tex.viewNumMips = 1;
     tex.viewFirstMip = 0;
@@ -88,20 +97,23 @@ void InitTex(GX2Texture& tex, uint32_t width, uint32_t height, GX2SurfaceFormat 
                  tex.surface.pitch);
 }
 
-bool Init()
+bool Initialize()
 {
-    InitTex(s_yTex, CAMERA_WIDTH, CAMERA_HEIGHT, GX2_SURFACE_FORMAT_UNORM_R8,
-            GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_0, GX2_SQ_SEL_0, GX2_SQ_SEL_1));
-    InitTex(s_uvTex, CAMERA_WIDTH / 2, CAMERA_HEIGHT / 2, GX2_SURFACE_FORMAT_UNORM_R8_G8,
-            GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_G, GX2_SQ_SEL_0, GX2_SQ_SEL_1));
+    // Map Y to R
+    InitializeTexture(s_yTexture, CAMERA_WIDTH, CAMERA_HEIGHT, GX2_SURFACE_FORMAT_UNORM_R8,
+                      GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_0, GX2_SQ_SEL_0, GX2_SQ_SEL_1));
+    // Map UV to RG
+    InitializeTexture(s_uvTexture, CAMERA_WIDTH / 2, CAMERA_HEIGHT / 2, GX2_SURFACE_FORMAT_UNORM_R8_G8,
+                      GX2_COMP_MAP(GX2_SQ_SEL_R, GX2_SQ_SEL_G, GX2_SQ_SEL_0, GX2_SQ_SEL_1));
 
     GX2InitSampler(&s_sampler, GX2_TEX_CLAMP_MODE_CLAMP, GX2_TEX_XY_FILTER_MODE_LINEAR);
     GX2InitSamplerBorderType(&s_sampler, GX2_TEX_BORDER_TYPE_BLACK);
 
-    constexpr static auto infoLogSize = 512;
-    char infoLog[infoLogSize];
+    constexpr static auto INFO_LOG_SIZE = 512;
+    char infoLog[INFO_LOG_SIZE];
 
-    s_shaderGroup.vertexShader = GLSL_CompileVertexShader(vertShaderSrc, infoLog, infoLogSize, GLSL_COMPILER_FLAG_NONE);
+    s_shaderGroup.vertexShader =
+        GLSL_CompileVertexShader(VERTEX_SHADER_SRC, infoLog, INFO_LOG_SIZE, GLSL_COMPILER_FLAG_NONE);
     if (!s_shaderGroup.vertexShader)
     {
         WHBLogPrintf("Failed to compile vertex shader: %s", infoLog);
@@ -110,7 +122,8 @@ bool Init()
     WHBLogPrintf("Vertex Shader: %d Attrib, %d Samplers, %d Uniforms", s_shaderGroup.vertexShader->attribVarCount,
                  s_shaderGroup.vertexShader->samplerVarCount, s_shaderGroup.vertexShader->uniformVarCount);
 
-    s_shaderGroup.pixelShader = GLSL_CompilePixelShader(fragShaderSrc, infoLog, infoLogSize, GLSL_COMPILER_FLAG_NONE);
+    s_shaderGroup.pixelShader =
+        GLSL_CompilePixelShader(PIXEL_SHADER_SRC, infoLog, INFO_LOG_SIZE, GLSL_COMPILER_FLAG_NONE);
     if (!s_shaderGroup.pixelShader)
     {
         WHBLogPrintf("Failed to compile pixel shader: %s", infoLog);
@@ -126,7 +139,7 @@ bool Init()
 
     // Shader attributes
 
-    WHBGfxInitShaderAttribute(&s_shaderGroup, "inPosCoord", 0, 0, GX2_ATTRIB_FORMAT_FLOAT_32_32);
+    WHBGfxInitShaderAttribute(&s_shaderGroup, "inVertexCoord", 0, 0, GX2_ATTRIB_FORMAT_FLOAT_32_32);
     WHBGfxInitShaderAttribute(&s_shaderGroup, "inTexCoord", 1, 0, GX2_ATTRIB_FORMAT_FLOAT_32_32);
 
     WHBGfxInitFetchShader(&s_shaderGroup);
@@ -136,11 +149,11 @@ bool Init()
 
 void SetImage(void* img)
 {
-    if (img == s_yTex.surface.image)
+    if (img == s_yTexture.surface.image)
         return;
     GX2Invalidate(GX2_INVALIDATE_MODE_CPU_TEXTURE, img, CAMERA_YUV_BUFFER_SIZE);
-    s_yTex.surface.image = img;
-    s_uvTex.surface.image = static_cast<uint8_t*>(img) + CAMERA_Y_BUFFER_SIZE;
+    s_yTexture.surface.image = img;
+    s_uvTexture.surface.image = static_cast<uint8_t*>(img) + CAMERA_Y_BUFFER_SIZE;
 }
 
 void DrawInternal()
@@ -151,14 +164,14 @@ void DrawInternal()
     GX2SetVertexShader(s_shaderGroup.vertexShader);
     GX2SetPixelShader(s_shaderGroup.pixelShader);
 
-    GX2SetPixelTexture(&s_yTex, s_shaderGroup.pixelShader->samplerVars[0].location);
-    GX2SetPixelTexture(&s_uvTex, s_shaderGroup.pixelShader->samplerVars[1].location);
+    GX2SetPixelTexture(&s_yTexture, s_shaderGroup.pixelShader->samplerVars[0].location);
+    GX2SetPixelTexture(&s_uvTexture, s_shaderGroup.pixelShader->samplerVars[1].location);
 
     GX2SetPixelSampler(&s_sampler, s_shaderGroup.pixelShader->samplerVars[0].location);
     GX2SetPixelSampler(&s_sampler, s_shaderGroup.pixelShader->samplerVars[1].location);
 
-    GX2SetAttribBuffer(0, 4 * 2 * sizeof(float), 2 * sizeof(float), s_posCoords);
-    GX2SetAttribBuffer(1, 4 * 2 * sizeof(float), 2 * sizeof(float), s_texCoords);
+    GX2SetAttribBuffer(0, sizeof(VERTEX_COORDS), sizeof(Vec2f), VERTEX_COORDS);
+    GX2SetAttribBuffer(1, sizeof(TEX_COORDS), sizeof(Vec2f), TEX_COORDS);
 
     GX2DrawEx(GX2_PRIMITIVE_MODE_QUADS, 4, 0, 1);
 }
@@ -178,9 +191,9 @@ void Draw()
     WHBGfxFinishRender();
 }
 
-void Cleanup()
+void Finalize()
 {
     GLSL_FreePixelShader(s_shaderGroup.pixelShader);
     GLSL_FreeVertexShader(s_shaderGroup.vertexShader);
 }
-}; // namespace gfx
+}; // namespace graphics

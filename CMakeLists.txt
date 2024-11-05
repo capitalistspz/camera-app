@@ -7,8 +7,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Wextra")
 
 
 add_executable(camera_app main.cpp
-        gfx.cpp
-        gfx.hpp
+        graphics.cpp
+        graphics.hpp
         camera.cpp
         camera.hpp)
 

@@ -1,13 +1,13 @@
 #include "camera.hpp"
-#include <cstdlib>
-#include <whb/log.h>
 #include <camera/camera.h>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
+#include <whb/log.h>
 
 namespace camera
 {
-void* Alloc(uint32_t alignment, uint32_t size)
+void* Allocate(uint32_t alignment, uint32_t size)
 {
     void* out = std::aligned_alloc(alignment, size);
     while (CAMCheckMemSegmentation(out, size) != CAMERA_ERROR_OK)
@@ -15,7 +15,6 @@ void* Alloc(uint32_t alignment, uint32_t size)
         std::free(out);
         out = std::aligned_alloc(alignment, size);
     }
-
     return out;
 }
 
@@ -34,7 +33,7 @@ void EventHandler(CAMEventData* evtData)
     }
 }
 
-bool Init()
+bool Initialize()
 {
     CAMStreamInfo streamInfo{.type = CAMERA_STREAM_TYPE_1, .height = CAMERA_HEIGHT, .width = CAMERA_WIDTH};
     const auto memReq = CAMGetMemReq(&streamInfo);
@@ -43,7 +42,7 @@ bool Init()
         WHBLogPrintf("Failed to get memory requirement: %x", memReq);
         return false;
     }
-    s_workMemBuf = Alloc(0x100, memReq);
+    s_workMemBuf = Allocate(0x100, memReq);
 
     CAMWorkMem workMem{.size = static_cast<uint32_t>(memReq), .pMem = s_workMemBuf};
     CAMMode mode{.forceDrc = false, .fps = CAMERA_FPS_30};
@@ -66,15 +65,15 @@ bool Init()
     }
     s_surfaces[0].surfaceSize = CAMERA_YUV_BUFFER_SIZE;
     s_surfaces[0].alignment = CAMERA_YUV_BUFFER_ALIGNMENT;
-    s_surfaces[0].surfaceBuffer = Alloc(CAMERA_YUV_BUFFER_ALIGNMENT, CAMERA_YUV_BUFFER_SIZE);
+    s_surfaces[0].surfaceBuffer = Allocate(CAMERA_YUV_BUFFER_ALIGNMENT, CAMERA_YUV_BUFFER_SIZE);
 
     s_surfaces[1].surfaceSize = CAMERA_YUV_BUFFER_SIZE;
     s_surfaces[1].alignment = CAMERA_YUV_BUFFER_ALIGNMENT;
-    s_surfaces[1].surfaceBuffer = Alloc(CAMERA_YUV_BUFFER_ALIGNMENT, CAMERA_YUV_BUFFER_SIZE);
+    s_surfaces[1].surfaceBuffer = Allocate(CAMERA_YUV_BUFFER_ALIGNMENT, CAMERA_YUV_BUFFER_SIZE);
     return true;
 }
 
-void* GetSurfaceBuffer()
+void* UpdateSurfaceBuffer()
 {
     if (s_submitNewSurface)
     {
@@ -85,7 +84,7 @@ void* GetSurfaceBuffer()
     }
     return s_surfaces[!s_decodeSurfaceIndex].surfaceBuffer;
 }
-void Exit()
+void Finalize()
 {
     CAMExit(s_handle);
     std::free(s_workMemBuf);

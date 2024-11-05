@@ -3,8 +3,8 @@
 
 namespace camera
 {
-bool Init();
-void* GetSurfaceBuffer();
-void Exit();
+bool Initialize();
+void* UpdateSurfaceBuffer();
+void Finalize();
 void SaveNV12(const std::filesystem::path& path);
 } // namespace camera
