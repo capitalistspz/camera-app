@@ -16,6 +16,7 @@ void FinalizeLibs();
 int main()
 {
     namespace chr = std::chrono;
+    namespace fs = std::filesystem;
 
     WHBProcInit();
     WHBLogUdpInit();
@@ -45,6 +46,11 @@ int main()
 
     const auto localTimeZone = chr::current_zone();
 
+    // wiiu/cam on SD Card
+    const auto imageFolder = fs::path("/vol/external01/wiiu/cam");
+    if (!fs::exists(imageFolder))
+        fs::create_directories(imageFolder);
+
     while (WHBProcIsRunning())
     {
         auto* camSurfaceBuf = camera::UpdateSurfaceBuffer();
@@ -54,7 +60,7 @@ int main()
             if (justChanged & VPAD_BUTTON_A)
             {
                 const auto localNow = localTimeZone->to_local(chr::system_clock::now());
-                const auto path = std::format("/vol/external01/wiiu/cam/IMG-{0:%F}-{0:%H}-{0:%M}-{0:%S}.nv12",
+                const auto path = imageFolder / std::format("IMG-{0:%F}-{0:%H}-{0:%M}-{0:%S}.nv12",
                                               chr::floor<chr::milliseconds>(localNow));
                 camera::SaveNV12(path);
             }
