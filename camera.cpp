@@ -58,11 +58,7 @@ bool Initialize()
         WHBLogPrintf("Failed to initialized camera: %d", camError);
         return false;
     }
-    if (const auto error = CAMOpen(s_handle))
-    {
-        WHBLogPrintf("Failed to open camera: %d", error);
-        return false;
-    }
+
     s_surfaces[0].surfaceSize = CAMERA_YUV_BUFFER_SIZE;
     s_surfaces[0].alignment = CAMERA_YUV_BUFFER_ALIGNMENT;
     s_surfaces[0].surfaceBuffer = Allocate(CAMERA_YUV_BUFFER_ALIGNMENT, CAMERA_YUV_BUFFER_SIZE);
@@ -90,6 +86,20 @@ void Finalize()
     std::free(s_workMemBuf);
     std::free(s_surfaces[0].surfaceBuffer);
     std::free(s_surfaces[1].surfaceBuffer);
+}
+
+bool Open()
+{
+    if (const auto error = CAMOpen(s_handle))
+    {
+        WHBLogPrintf("Failed to open camera: %d", error);
+        return false;
+    }
+    return true;
+}
+void Close()
+{
+    CAMClose(s_handle);
 }
 
 void SaveNV12(const std::filesystem::path& path)

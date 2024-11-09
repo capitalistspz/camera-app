@@ -4,7 +4,11 @@
 namespace camera
 {
 bool Initialize();
-void* UpdateSurfaceBuffer();
 void Finalize();
+
+bool Open();
+void Close();
+
+void* UpdateSurfaceBuffer();
 void SaveNV12(const std::filesystem::path& path);
 } // namespace camera

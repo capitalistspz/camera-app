@@ -3,6 +3,7 @@
 #include <CafeGLSLCompiler.h>
 #include <chrono>
 #include <format>
+#include <proc_ui/procui.h>
 #include <sysapp/launch.h>
 #include <vpad/input.h>
 #include <whb/gfx.h>
@@ -12,6 +13,7 @@
 
 void FinalizeLibs();
 [[noreturn]] void ExitToMenu();
+uint32_t ReopenCamera(void*);
 
 int main()
 {
@@ -26,11 +28,20 @@ int main()
 
     if (!camera::Initialize())
     {
-        WHBLogPrint("Failed to initialize/open camera");
+        WHBLogPrint("Failed to initialize camera");
         ExitToMenu();
     }
 
-    WHBLogPrint("Initialized and opened camera");
+    WHBLogPrint("Initialized camera");
+    if (!camera::Open())
+    {
+        ExitToMenu();
+    }
+    WHBLogPrint("Opened camera");
+
+    // Camera is automatically closed when the process is moved to background,
+    // so re-open camera when moved back to foreground
+    ProcUIRegisterCallback(PROCUI_CALLBACK_ACQUIRE, ReopenCamera, nullptr, 10);
 
     if (!graphics::Initialize())
     {
@@ -61,7 +72,7 @@ int main()
             {
                 const auto localNow = localTimeZone->to_local(chr::system_clock::now());
                 const auto path = imageFolder / std::format("IMG-{0:%F}-{0:%H}-{0:%M}-{0:%S}.nv12",
-                                              chr::floor<chr::milliseconds>(localNow));
+                                                            chr::floor<chr::milliseconds>(localNow));
                 camera::SaveNV12(path);
             }
             prevVpadStatus = vpadStatus;
@@ -91,4 +102,9 @@ void FinalizeLibs()
     }
     FinalizeLibs();
     std::exit(0);
+}
+
+uint32_t ReopenCamera(void*)
+{
+    return !camera::Open();
 }
